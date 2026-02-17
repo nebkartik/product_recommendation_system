@@ -48,7 +48,7 @@ Demo  :
 - **Clone your GitHub repo**
 
   ```bash
-  git clone https://github.com/d-hackmt/flipkart-product-chatbot.git
+  git clone https://github.com/nebkartik/product_recommendation_system.git
   ls
   cd TESTING-9
   ls  # You should see the contents of your project
