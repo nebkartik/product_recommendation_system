@@ -8,14 +8,26 @@ from flipkart.data_converter import DataConverter
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
 import os, certifi
 import requests
+from langchain.embeddings.base import Embeddings
 
-requests.get("https://router.huggingface.co", verify=False)
-os.environ["SSL_CERT_FILE"] = certifi.where()
+
+# print("API endpoint:", os.getenv("ASTRA_DB_API_ENDPOINT"))
+
+
+# requests.get("https://router.huggingface.co", verify=False)
+# os.environ["SSL_CERT_FILE"] = certifi.where()
+
+class DummyEmbeddings(Embeddings):
+    def embed_documents(self, texts):
+        return [[0.0] * 10 for _ in texts]  # fixed 10-dim zero vector
+    def embed_query(self, text):
+        return [0.0] * 10
 
 
 class DataIngestor:
     def __init__(self):
-        self.embedding = HuggingFaceEndpointEmbeddings(model=Config.embedding_model)
+        #self.embedding = HuggingFaceEndpointEmbeddings(model=Config.embedding_model)
+        self.embedding = DummyEmbeddings()
         self.vstore = AstraDBVectorStore(
             embedding=self.embedding,
             collection_name="product_database",
