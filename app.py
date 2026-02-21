@@ -1,3 +1,6 @@
+from urllib import response
+from langchain import messages
+
 from flask import Flask, render_template, request, Response, jsonify
 from prometheus_client import Counter, generate_latest
 import uuid
@@ -35,17 +38,46 @@ def create_app():
                  ,
                     config={
                         "configurable": {
-                            "THREAD_ID": THREAD_ID
+                            "thread_id": THREAD_ID
                         }
                      }
              
              )
          PREDICTION_COUNT.inc()
 
-         if not response.get("messages"):
-               return jsonify({"response": "Sorry, I couldn't find an answer. Please contact our customer care at +97 98652365."})
+         messages = response.get("messages") if isinstance(response, dict) else None
+         if not messages:
+            return jsonify({"response": "Sorry, I couldn't find an answer. Please contact our customer care at +97 98652365."})
+
+         last = messages[-1]
+         if isinstance(last, dict):
+            content_text = last.get("content", "") or ""
+         elif hasattr(last, "content"):
+            content_text = getattr(last, "content") or ""
+         elif hasattr(last, "text"):
+            content_text = getattr(last, "text") or ""
+         else:
+            content_text = str(last)
+        #  content = last.get("content") if isinstance(last, dict) else last
+         print("Content to return:", content_text)
+        #  return jsonify({"response": content}) 
+         return content_text  
+        #  return jsonify({"response": content_text})     
+
+        # ensure JSON serializable
+        #  try:
+        #     print("[DEBUG] Response content is serializable")
+        #     return jsonify({"response": content})
+        #  except TypeError:
+        #     print("[ERROR] Response content is not JSON serializable:")
+        #     return jsonify({"response": str(content)})
+            
+      
+      
+        #  if not response.get("messages"):
+        #        return jsonify({"response": "Sorry, I couldn't find an answer. Please contact our customer care at +97 98652365."})
         
-         return jsonify({"response": response["messages"][-1]["content"]}) 
+        #  return jsonify({"response": response["messages"][-1]["content"]}) 
     
     @app.route("/metrics")
     def metrics():
