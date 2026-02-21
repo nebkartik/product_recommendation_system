@@ -1,0 +1,48 @@
+# Kubernetes Deployment and Service for Prometheus - Configuration File
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  # standard for prometheus & grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      # Pulling Docker Image - Prometheus Public Image
+        - name: prometheus
+          image: prom/prometheus
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+---
+# Service for Prometheus - Exposes Prometheus to external traffic using NodePort. This allows access to the Prometheus UI and API from outside the cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: monitoring
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+      nodePort: 32001 
+  type: NodePort

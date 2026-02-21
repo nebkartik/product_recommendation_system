@@ -1,0 +1,39 @@
+# Grafana Configuration for Kubernetes Deployment and Service
+#  Includes Deployment and Service definitions for Grafana.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  # standard label for identifying the application
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana  
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+    # Grafana Image - Coming from Docker Hub - This image is a Public Image provided by Grafana. 
+      containers:
+        - name: grafana
+          image: grafana/grafana
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: monitoring
+spec:
+  selector:
+    app: grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 32000  
+  type: NodePort

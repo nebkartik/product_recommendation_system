@@ -1,0 +1,46 @@
+# Kubernetes Deployment and Service for Flask Application - Configuration File
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  labels:
+    app: flask
+spec:
+# Replicas - Number of pod instances to run.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask
+  template:
+    metadata:
+      labels:
+        app: flask
+    spec:
+      containers:
+      # Container Name
+      # Container Image - Custom image built and pushed to a container registry.
+      - name: flask-container
+        image: flask-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        # Port Mapping
+          - containerPort: 5000
+        envFrom:
+        # Configure Secrets in Cloud - Kubernetes Secrets are used to store sensitive information such as API keys, passwords, and other credentials. They provide a secure 
+        # way to manage and access this information within a Kubernetes cluster.
+          - secretRef:
+              name: llmops-secrets
+---
+# Kubernetes Service to expose the Flask application to external traffic. It creates a LoadBalancer that routes traffic to the Flask pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: flask
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
