@@ -1,5 +1,6 @@
 ## Parent image
-# Docker - Executable file that can be deployed on any machine with Docker installed. It contains all the necessary dependencies and configurations to run an application.
+# Docker - Executable file that can be deployed on any machine with Docker installed. It contains all the 
+# necessary dependencies and configurations to run an application.
 
 # Slim image - Small and lightweight app.
 FROM python:3.11-slim

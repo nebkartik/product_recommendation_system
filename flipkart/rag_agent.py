@@ -5,9 +5,11 @@ from flipkart.data_ingestion import DataIngestor
 from langchain.agents.middleware import SummarizationMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from flipkart.config import Config
-
+from utils.logger import get_logger
+from utils.custom_exception import CustomException
 
 def rag_retreiver_tool(retreiver):
+    get_logger("RAGAgent").info("RAG Retreiver Called.")
 
     @tool("search_product", description="Search for a product in the vector store by query string")
     def rag_retriever_tool(query):
@@ -22,33 +24,42 @@ class RAGAgentBuilder:
         self.vector_store = vector_store
     
     def build_agent(self):
-        retreiver = self.vector_store.as_retriever(search_kwargs={"k": 3})
-        rag_tool = rag_retreiver_tool(retreiver)
-        agent = create_agent(
-            model=self.model,
-            tools=[rag_tool],
-            system_prompt= """
-            
-            You're an e-commerce bot answering product-related queries 
-                    based on reviews and titles.
-                    
-                    And To find the answers always use 
-                    rag_retreiver_tool
-                    
-                    if you do not know an 
-                    answer politely say that 
-                    i dont know the answer please 
-                    contact our customer care +97 98652365.
-            
-            """,
-            checkpointer=InMemorySaver(),
-            middleware = [SummarizationMiddleware(
+        try:
+            retreiver = self.vector_store.as_retriever(search_kwargs={"k": 3})
+            rag_tool = rag_retreiver_tool(retreiver)
+
+            get_logger("RAGAgent").info("Vector Store Docs Retreived")
+
+            agent = create_agent(
                 model=self.model,
-                trigger = ("messages", 10),
-                keep = ("messages", 4)
-            )]
-            
-            )
+                tools=[rag_tool],
+                system_prompt= """
+                
+                You're an e-commerce bot answering product-related queries 
+                        based on reviews and titles.
+                        
+                        And To find the answers always use 
+                        rag_retreiver_tool
+                        
+                        if you do not know an 
+                        answer politely say that 
+                        i dont know the answer please 
+                        contact our customer care +97 98652365.
+                
+                """,
+                checkpointer=InMemorySaver(),
+                middleware = [SummarizationMiddleware(
+                    model=self.model,
+                    trigger = ("messages", 10),
+                    keep = ("messages", 4)
+                )]
+                
+                )
+        except Exception as e:
+            get_logger("RAGAgent").error("Error during RAG Agent creation: %s", str(e))
+            raise CustomException("Failed to build RAG Agent", e)
+        
+        get_logger("RAGAgent").info("RAG Agent Built.")
         return agent
 
 

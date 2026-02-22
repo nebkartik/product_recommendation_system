@@ -14,3 +14,7 @@ class CustomException(Exception):
 
     def __str__(self):
         return self.error_message
+    
+# class DataIngestionError(CustomException):
+#         def __init__(self, message: str, error_detail: Exception = None):
+#             super().__init__(message, error_detail)
