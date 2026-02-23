@@ -144,8 +144,8 @@ Demo  :
 ### 4. Interlink your Github on VSCode and on VM
 
 ```bash
-git config --global user.email "gyrogodnon@gmail.com"
-git config --global user.name "data-guru0"
+git config --global user.email "abcde@gmail.com"
+git config --global user.name "123456"
 
 git add .
 git commit -m "commit"
