@@ -1,0 +1,41 @@
+Transformer Variants for Productions
+
+1. EfficientFormer
+   - A lightweight transformer designed for efficiency in edge devices and mobile deployments. 
+   - Balances accuracy with reduced computational cost, making it suitable for production environments with limited resources.
+
+2. Longformer
+   - Optimized for handling very long sequences using sparse attention mechanisms. 
+   - Useful in document-level NLP tasks like summarization and question answering over long texts.
+
+3. Performer
+   - Introduces linear attention via kernel methods to reduce memory and computation. 
+   - Enables scaling transformers to very large contexts while remaining efficient.
+
+4. Linformer
+   - Projects the attention matrix into a lower-dimensional space. 
+   - Reduces complexity from quadratic to linear, making it practical for production workloads.
+
+5. Reformer
+   - Uses locality-sensitive hashing (LSH) and reversible layers to cut down memory usage. 
+   - Ideal for training large models on limited hardware.
+
+6. BigBird
+   - Combines random, global, and sliding window attention patterns. 
+   - Handles sequences up to thousands of tokens, enabling tasks like long document classification.
+
+7. Funnel Transformer
+   - Compresses sequence length progressively while deepening representation. 
+   - Improves efficiency and speed, especially for classification tasks.
+
+8. Switch Transformer
+   - A mixture-of-experts model where only a subset of parameters are activated per input. 
+   - Achieves massive scale with reduced compute per example.
+
+9. Transformer-XL
+   - Adds recurrence to the transformer architecture. 
+   - Extends context length beyond fixed windows, useful for language modeling and sequential tasks.
+
+10. GPT-style Transformers
+    - Autoregressive transformers trained for text generation. 
+    - Widely used in production for chatbots, content creation, and reasoning tasks.

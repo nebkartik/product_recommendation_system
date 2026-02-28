@@ -10,6 +10,5 @@ wheels/
 .venv
 
 .env
-
+logs
 product_recommender
-experiments

@@ -7,6 +7,11 @@ from langgraph.checkpoint.memory import InMemorySaver
 from flipkart.config import Config
 from utils.logger import get_logger
 from utils.custom_exception import CustomException
+from langchain_community.tools import WikipediaQueryRun
+from langchain_community.utilities import  WikipediaAPIWrapper
+
+from langchain_community.tools import ArxivQueryRun
+from langchain_community.utilities import ArxivAPIWrapper
 
 def rag_retreiver_tool(retreiver):
     get_logger("RAGAgent").info("RAG Retreiver Called.")
@@ -16,6 +21,12 @@ def rag_retreiver_tool(retreiver):
         docs = retreiver.invoke(query)
         return "\n\n".join(doc.page_content for doc in docs)
     return rag_retriever_tool
+
+
+# Wikipedia Tool
+wiki_api_wrapper = WikipediaAPIWrapper(top_k_results=1,doc_content_chars_max=300)
+wiki_tool = WikipediaQueryRun(api_wrapper=wiki_api_wrapper)
+
     
 
 class RAGAgentBuilder: 
@@ -32,27 +43,27 @@ class RAGAgentBuilder:
 
             agent = create_agent(
                 model=self.model,
-                tools=[rag_tool],
+                tools=[rag_tool,wiki_tool],
                 system_prompt= """
                 
                 You're an e-commerce bot answering product-related queries 
                         based on reviews and titles.
                         
                         And To find the answers always use 
-                        rag_retreiver_tool
-                        
+                        tools
                         if you do not know an 
                         answer politely say that 
                         i dont know the answer please 
                         contact our customer care +97 98652365.
+                        Prefix your response with FINAL ANSWER so the team knows to stop.
                 
                 """,
-                checkpointer=InMemorySaver(),
-                middleware = [SummarizationMiddleware(
-                    model=self.model,
-                    trigger = ("messages", 10),
-                    keep = ("messages", 4)
-                )]
+                # checkpointer=InMemorySaver(),
+                # middleware = [SummarizationMiddleware(
+                #     model=self.model,
+                #     trigger = ("messages", 10),
+                #     keep = ("messages", 4)
+                # )]
                 
                 )
         except Exception as e:
