@@ -22,8 +22,7 @@ class SearchAgent:
                 model = Config.rag_model,
                 tools=[arxiv_tool,duckduckgo_tool],
                 system_prompt="You're a web search Agent. " \
-                "Get context from the tools and return info for the User Query." \
-                "prefix your response with FINAL ANSWER so the team knows to stop." 
+                "Get context from the tools and return info for the User Query."  
             )
             # return search_agent
         except Exception as e:

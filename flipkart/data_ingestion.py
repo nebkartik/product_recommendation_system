@@ -16,7 +16,7 @@ os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 #     def embed_query(self, text):
 #         return [0.0] * 10
 
-get_logger("DataIngestion").info("Starting data ingestion process...")
+# get_logger("DataIngestion").info("Starting data ingestion process...")
 class DataIngestor:
     def __init__(self):
         self.embedding = OpenAIEmbeddings()
@@ -28,7 +28,6 @@ class DataIngestor:
             token=Config.astra_db_token,
             namespace=Config.astra_db_keyspace
         )
-    get_logger("DataIngestion").info("DataIngestor initialized with VectorDB")
 
     def ingest(self,load_existing=True):
      try:
@@ -40,13 +39,13 @@ class DataIngestor:
         get_logger("DataIngestion").debug(f"Loading CSV from {data_path}")
         docs = DataConverter(data_path).doc_converter()
         self.vstore.add_documents(docs)
+        get_logger("DataIngestion").info("Data ingestion completed successfully.")
 
      except Exception as e:
         get_logger("DataIngestion").error("Error during data ingestion: %s", str(e))
         raise CustomException("Failed to ingest data", e)
 
-    get_logger("DataIngestion").info("Data ingestion completed successfully.")
-
+    
 if __name__=="__main__":
     ingestor = DataIngestor()
     ingestor.ingest(load_existing=False)    
