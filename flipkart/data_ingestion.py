@@ -33,6 +33,7 @@ class DataIngestor:
      try:
 
         if load_existing==True:
+            # get_logger("")
             return self.vstore
         root = os.path.dirname(os.path.dirname(__file__))
         data_path = os.path.join(root, "data", "flipkart_product_review.csv")

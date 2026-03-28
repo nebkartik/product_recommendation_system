@@ -19,6 +19,7 @@ def rag_retreiver_tool(retreiver):
     @tool("search_product", description="Search for a product in the vector store by query string")
     def rag_retriever_tool(query):
         docs = retreiver.invoke(query)
+        # get_logger("RAGAgent").info("Docs ","\n\n".join(doc.page_content for doc in docs))
         return "\n\n".join(doc.page_content for doc in docs)
     return rag_retriever_tool
 
@@ -38,9 +39,6 @@ class RAGAgentBuilder:
         try:
             retreiver = self.vector_store.as_retriever(search_kwargs={"k": 3})
             rag_tool = rag_retreiver_tool(retreiver)
-
-            get_logger("RAGAgent").info("Vector Store Docs Retreived")
-
             agent = create_agent(
                 model=self.model,
                 tools=[rag_tool,wiki_tool],
@@ -58,12 +56,13 @@ class RAGAgentBuilder:
                      
                 
                 """,
-                # checkpointer=InMemorySaver(),
-                # middleware = [SummarizationMiddleware(
-                #     model=self.model,
-                #     trigger = ("messages", 10),
-                #     keep = ("messages", 4)
-                # )]
+                debug=True,
+                checkpointer=InMemorySaver(),
+                middleware = [SummarizationMiddleware(
+                    model=self.model,
+                    trigger = ("messages", 10),
+                    keep = ("messages", 4)
+                )]
                 
                 )
         except Exception as e:

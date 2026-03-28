@@ -6,6 +6,13 @@ from utils.custom_exception import CustomException
 from workflow.graph import GraphInstance
 from langchain_core.messages import HumanMessage
 from flipkart.guardrails import GuardRails
+from flipkart.data_ingestion import DataIngestor
+from flipkart.rag_agent import RAGAgentBuilder
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_astradb import AstraDBSemanticCache
+from langchain_core.globals import set_llm_cache
+from flipkart.config import Config
+
 
 
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests")
@@ -13,18 +20,39 @@ PREDICTION_COUNT = Counter("http_predictions_total", "Total Model Predictions")
 
 def create_app():
     app = Flask(__name__,template_folder="frontend/templates", static_folder="frontend/static")
-    THREAD_ID = str(uuid.uuid4())  
-    get_logger("App").info("Flask app created with unique thread ID: %s", THREAD_ID)
+    thread_id = str(uuid.uuid4())  
+    thread_cache = {}
+    get_logger("App").info("Flask app created with unique thread ID: %s", thread_id)        
+
+    # Initialize these once to keep connections warm
+    # embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+    # semantic_cache = AstraDBSemanticCache(
+    #     collection_name="rag_app_cache",
+    #     api_endpoint=Config.astra_db_api_endpoint,
+    #     token=Config.astra_db_token,
+    #     embedding=embeddings
+    # )
+    # set_llm_cache(semantic_cache)
 
     @app.route("/")
     def index():
         REQUEST_COUNT.inc()
         return render_template("index.html")
     
+    
     @app.route("/get", methods=["POST"])
     def get_response():
          try:
             user_input = request.form["msg"]
+            get_logger("App").info("Received user input: %s", user_input)
+
+
+            # Thread Cache
+            if thread_id in thread_cache and user_input in thread_cache[thread_id]:
+                get_logger("App").info("Thread Cache Hit", thread_id)
+                # return jsonify({"content": thread_cache[thread_id][user_input]})
+                return thread_cache[thread_id][user_input]
+
             # response = rag_agent.invoke(
             #         {  
             #         "messages" : [
@@ -41,35 +69,46 @@ def create_app():
             #                 }
             #             }
                 
-            #     )
-            
+            #     
+            # cache_resp = semantic_cache.lookup(user_input,llm_string=Config.rag_model)
+            # get_logger("App").info("Cache: %s",cache_resp)
+            # if cache_resp:
+            #     get_logger("App").info("Cache Response Received",cache_resp)
+
+
             graph = GraphInstance().workflow()
             response = graph.invoke({"messages": [HumanMessage(content=user_input)]})
-            raw_content = response["messages"][-1].content
-            final_content = GuardRails().validate_response(raw_content)
+          
+            # get_logger("App").info("Graph Message",HumanMessage(content=user_input))
+
+            last_message = response["messages"][-1]
+            if hasattr(last_message, 'content'):
+                content_str = last_message.content
+            elif isinstance(content_str, dict):
+             content_str = content_str.get('content', str(content_str))
+            else:
+                content_str = str(content_str)
+
+            get_logger("App").info("LLM Response %s", content_str)
+            # final_content = GuardRails().validate_response(content_str)
             PREDICTION_COUNT.inc()
+            
+            # if thread_id not in thread_cache:
+            #     thread_cache[thread_id] = {}
 
-            get_logger("App").info("Received user input: %s", user_input)
+            # if len(thread_cache[thread_id]) > 20:
+            #      thread_cache[thread_id].pop(next(iter(thread_cache[thread_id]))) 
 
-        # #     messages = response.get("messages") if isinstance(response, dict) else None
-        # #     if not messages:
-        # #         return jsonify({"response": "Sorry, I couldn't find an answer. Please contact our customer care at +97 98652365."})
+            # thread_cache[thread_id][user_input] = final_content
 
-        # #     last = messages[-1]
-        # #     content_text = generate_response(last)
-        # #  except Exception as e:
-        # #     get_logger("App").error("Error generating response: %s", str(e))
-        # #     raise CustomException("Failed to generate response", e)
+            # print("Thread Cache", thread_cache)
+            return content_str
+         except Exception as e:
+            get_logger("App").error("Error generating response: %s", str(e))
+            raise CustomException("Failed to generate response", e)
          
         #  get_logger("App").info("Final response to user: %s", content_text)
         #  return content_text  
-            return final_content
-    
-         except Exception as e:
-                get_logger("App").error("Error generating response: %s", str(e))
-                raise CustomException("Failed to generate response", e)
-       
- 
 
     @app.route("/metrics")
     def metrics():
