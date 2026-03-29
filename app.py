@@ -11,8 +11,7 @@ from flipkart.rag_agent import RAGAgentBuilder
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_astradb import AstraDBSemanticCache
 from langchain_core.globals import set_llm_cache
-from flipkart.config import Config
-
+from flask import session
 
 
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests")
@@ -20,9 +19,9 @@ PREDICTION_COUNT = Counter("http_predictions_total", "Total Model Predictions")
 
 def create_app():
     app = Flask(__name__,template_folder="frontend/templates", static_folder="frontend/static")
-    thread_id = str(uuid.uuid4())  
+    app.secret_key = 'ChatbotSecretKey'  # Replace with a secure key in production
     thread_cache = {}
-    get_logger("App").info("Flask app created with unique thread ID: %s", thread_id)        
+    graph = GraphInstance().workflow()      
 
     # Initialize these once to keep connections warm
     # embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
@@ -43,15 +42,22 @@ def create_app():
     @app.route("/get", methods=["POST"])
     def get_response():
          try:
+            if 'thread_id' not in session:
+                session['thread_id'] = str(uuid.uuid4())
+            thread_id = session['thread_id']            
+
+            get_logger("App").info("Flask app created with unique thread ID:", thread_id)  
+
             user_input = request.form["msg"]
-            get_logger("App").info("Received user input: %s", user_input)
+            get_logger("App").info("Received user input: ", user_input)
 
 
             # Thread Cache
-            if thread_id in thread_cache and user_input in thread_cache[thread_id]:
-                get_logger("App").info("Thread Cache Hit", thread_id)
-                # return jsonify({"content": thread_cache[thread_id][user_input]})
-                return thread_cache[thread_id][user_input]
+            # if thread_id in thread_cache and user_input in thread_cache[thread_id]:
+            #     get_logger("App").info("Thread Cache Hit", thread_id)
+            #     # return jsonify({"content": thread_cache[thread_id][user_input]})
+            #     return thread_cache[thread_id][user_input]
+
 
             # response = rag_agent.invoke(
             #         {  
@@ -76,8 +82,8 @@ def create_app():
             #     get_logger("App").info("Cache Response Received",cache_resp)
 
 
-            graph = GraphInstance().workflow()
-            response = graph.invoke({"messages": [HumanMessage(content=user_input)]})
+            config = {"configurable": {"thread_id":thread_id}}
+            response = graph.invoke({"messages": [HumanMessage(content=user_input)]},config=config)
           
             # get_logger("App").info("Graph Message",HumanMessage(content=user_input))
 
@@ -89,7 +95,7 @@ def create_app():
             else:
                 content_str = str(content_str)
 
-            get_logger("App").info("LLM Response %s", content_str)
+            get_logger("App").info("LLM Response: ", content_str)
             # final_content = GuardRails().validate_response(content_str)
             PREDICTION_COUNT.inc()
             

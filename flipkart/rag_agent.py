@@ -46,7 +46,6 @@ class RAGAgentBuilder:
                 
                 You're an e-commerce bot answering product-related queries 
                         based on reviews and titles.
-                        
                         And To find the answers always use 
                         tools
                         if you do not know an 
@@ -56,13 +55,13 @@ class RAGAgentBuilder:
                      
                 
                 """,
-                debug=True,
-                checkpointer=InMemorySaver(),
-                middleware = [SummarizationMiddleware(
-                    model=self.model,
-                    trigger = ("messages", 10),
-                    keep = ("messages", 4)
-                )]
+                # debug=True
+                # checkpointer=InMemorySaver(),
+                # middleware = [SummarizationMiddleware(
+                #     model=self.model,
+                #     trigger = ("messages", 10),
+                #     keep = ("messages", 4)
+                # )]
                 
                 )
         except Exception as e:

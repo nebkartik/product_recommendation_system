@@ -8,7 +8,8 @@ from langgraph.types import Command
 from flipkart.rag_agent import RAGAgentBuilder
 from flipkart.web_search_agent import SearchAgent
 from flipkart.data_ingestion import DataIngestor
-import uuid
+from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
 
 
 
@@ -18,7 +19,9 @@ class GraphInstance:
             get_logger("Graph").info("Inside Constructor")
             self.vector_db = DataIngestor().ingest(load_existing=True)
             self.rag_agent = RAGAgentBuilder(self.vector_db).build_agent()
-            self.thread_id = str(uuid.uuid4())
+            # self.thread_id = str(uuid.uuid4())
+            self.conn = sqlite3.connect("checkpoints.sqlite",check_same_thread=False)
+            self.memory = SqliteSaver(self.conn)
                 
 
         def get_next_node(self, last_msg: BaseMessage, goto: str):
@@ -30,27 +33,28 @@ class GraphInstance:
             # get_logger("Graph").info("Rag Node with State: ",type(state), state)
             # get_logger("Graph").info(f"Rag Node with State Type: {type(state)}")
             # result = self.rag_agent.invoke(state)
-            if isinstance(state, dict) and "messages" in state:
-                user_text = state["messages"][-1].content
-            else:
-                user_text = str(state)    
+            # if isinstance(state, dict) and "messages" in state:
+            #     user_text = state["messages"][-1].content
+            # else:
+            #     user_text = str(state)    
 
-            result = self.rag_agent.invoke(
-                    {  
-                    "messages" : [
-                            {
-                        "role": "user",
-                        "content": user_text
-                            }
-                        ]
-                    }
-                    ,
-                        config={
-                            "configurable": {
-                                "thread_id": self.thread_id
-                            }
-                        }
-                )
+            result = self.rag_agent.invoke(state)
+            # result = self.rag_agent.invoke(
+            #         {  
+            #         "messages" : [
+            #                 {
+            #             "role": "user",
+            #             "content": user_text
+            #                 }
+            #             ]
+            #         }
+            #         ,
+            #             config={
+            #                 "configurable": {
+            #                     "thread_id": ""
+            #                 }
+            #             }
+            #     )
             # get_logger("Graph").info("Res",result, "Type",type(result)) 
             last_message = result["messages"][-1]
 
@@ -113,5 +117,5 @@ class GraphInstance:
             workflow.add_node("rag_agent", self.rag_node)
             workflow.add_node("search_agent", self.search_node)
             workflow.add_edge(START, "rag_agent")
-            graph = workflow.compile()
+            graph = workflow.compile(checkpointer=self.memory)
             return graph
